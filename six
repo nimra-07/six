@@ -1,0 +1,203 @@
+✅ PHASE 1: Create the MySQL Database on RDS
+1. Go to AWS Console → Search “RDS” → Click RDS
+2. Create RDS Database:
+Click “Create Database”
+
+Creation method: Standard Create
+
+Engine Options: MySQL
+
+Edition: MySQL Community
+
+Version: 8.0.32
+
+Templates: Free Tier
+
+3. Settings:
+DB instance identifier: mydbinstance
+
+Master username: admin
+
+Password: yourpassword
+
+4. Storage & Connectivity:
+Leave storage settings default
+
+Public Access: ✅ Yes
+
+Availability Zone: No preference
+
+VPC: Default or create new if needed
+
+5. Additional Config:
+Initial DB Name: mydatabase (or any name you want)
+
+Rest leave default
+
+Click Create Database
+
+6. Wait for DB to be created (Status: Available)
+7. Once created:
+Go to RDS → Databases
+
+Click on the DB name
+
+Go to Connectivity & Security
+
+Copy the Endpoint, e.g. mydbinstance.xxxxx.rds.amazonaws.com
+
+✅ PHASE 2: Set up VPC & Network
+Skip this if you're using the default VPC and subnet, else follow below.
+
+1. Go to VPC → Create:
+VPC, Internet Gateway, Subnet, Route Table
+
+2. Route Table:
+Associate with Subnet
+
+Add route: 0.0.0.0/0 → Target: Internet Gateway
+
+Save
+
+✅ PHASE 3: Launch EC2 Instance
+1. Go to EC2 → Launch Instance
+AMI: Ubuntu 22.04
+
+Instance type: t2.micro
+
+Key Pair: Create new or use existing one (e.g., mykey.pem)
+
+2. Network Settings:
+Choose same VPC as RDS (or default)
+
+Choose same subnet as RDS (or default subnet)
+
+Enable Auto-assign Public IP
+
+3. Firewall (Security Group):
+Allow these Inbound Rules:
+
+SSH → Anywhere (0.0.0.0/0)
+
+HTTP → Anywhere (0.0.0.0/0)
+
+HTTPS → Anywhere (0.0.0.0/0)
+
+MySQL/Aurora → Anywhere (0.0.0.0/0)
+
+Launch the instance
+
+✅ PHASE 4: Connect to EC2 via SSH
+1. Open terminal on your local machine:
+bash
+Copy
+Edit
+chmod 400 mykey.pem
+ssh -i "mykey.pem" ubuntu@<EC2 Public IP>
+Replace <EC2 Public IP> with the copied IP address from EC2 dashboard.
+
+✅ PHASE 5: Install Apache, PHP, and MySQL Client
+Once inside the EC2 terminal:
+
+bash
+Copy
+Edit
+sudo apt-get update -y
+sudo apt-get install apache2 -y
+sudo systemctl restart apache2
+sudo apt-get install php libapache2-mod-php php-mysql -y
+sudo apt-get install mysql-client -y
+Check MySQL client:
+bash
+Copy
+Edit
+mysql --version
+Connect to RDS:
+bash
+Copy
+Edit
+mysql -h <RDS-endpoint> -u admin -p
+It’ll prompt for password. Enter it and run:
+
+sql
+Copy
+Edit
+SHOW DATABASES;
+USE mydatabase;
+Then exit:
+🔹 Step 1: Go to Apache root directory
+bash
+Copy
+Edit
+cd /var/www/html
+sudo rm index.html  # optional, remove default Apache page
+🔹 Step 2: Create index.php
+bash
+Copy
+Edit
+sudo nano index.php
+Paste this code (replace with your actual RDS endpoint, DB name, and password):
+
+php
+Copy
+Edit
+<?php
+// DB connection details
+$host = "your-rds-endpoint.rds.amazonaws.com";
+$user = "admin";
+$password = "yourpassword";
+$dbname = "mydatabase";
+
+// Create connection
+$conn = new mysqli($host, $user, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("❌ Connection failed: " . $conn->connect_error);
+}
+echo "<h2>✅ Connected successfully to RDS MySQL!</h2>";
+
+// Create table if not exists
+$sql = "CREATE TABLE IF NOT EXISTS students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+)";
+if ($conn->query($sql) === TRUE) {
+    echo "<p>Table <b>students</b> is ready.</p>";
+} else {
+    echo "<p>Error creating table: " . $conn->error . "</p>";
+}
+
+// Insert dummy data
+$sql = "INSERT IGNORE INTO students (name, email) VALUES
+    ('Alice', 'alice@example.com'),
+    ('Bob', 'bob@example.com')";
+$conn->query($sql);
+
+// Fetch and display data
+$result = $conn->query("SELECT * FROM students");
+
+if ($result->num_rows > 0) {
+    echo "<h3>📋 Student Records:</h3>";
+    echo "<table border='1' cellpadding='5'><tr><th>ID</th><th>Name</th><th>Email</th></tr>";
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr><td>".$row["id"]."</td><td>".$row["name"]."</td><td>".$row["email"]."</td></tr>";
+    }
+    echo "</table>";
+} else {
+    echo "<p>No records found.</p>";
+}
+
+$conn->close();
+?>
+Save and exit: Ctrl + O, Enter, Ctrl + X
+
+✅ PHASE 7: View Your PHP App in the Browser
+🔹 Step 1: Open browser
+Go to:
+
+pgsql
+Copy
+Edit
+http://<Your-EC2-Public-IP>/index.php
