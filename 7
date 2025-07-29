@@ -1,0 +1,220 @@
+✅ FULL GUIDE: Host index.html on EC2 using Apache (Ubuntu)
+🟠 PREREQUISITES
+✅ AWS account
+
+✅ EC2 key pair (.pem file)
+
+✅ index.html file on your local machine
+
+✅ VS Code or Terminal (Linux/macOS/Ubuntu/WSL)
+
+🔵 STEP 1: Launch EC2 Instance
+Go to AWS Console → EC2 → Launch Instance
+
+Fill:
+
+Name: MyWebServer
+
+AMI: Ubuntu 22.04 (or latest)
+
+Instance type: t2.micro (Free Tier)
+
+Key pair: Select or create .pem key
+
+Network settings:
+
+Create or choose a Security Group
+
+Add Inbound Rules:
+
+HTTP (port 80) → 0.0.0.0/0
+
+SSH (port 22) → Your IP
+
+Click Launch
+
+🔵 STEP 2: Connect to EC2 via SSH
+On your local system terminal:
+
+bash
+Copy
+Edit
+chmod 400 your-key.pem
+ssh -i "your-key.pem" ubuntu@<EC2-PUBLIC-IP>
+🔁 Replace:
+
+your-key.pem with your actual key file
+
+<EC2-PUBLIC-IP> with public IP of instance (from EC2 dashboard)
+
+🔵 STEP 3: Install Apache Web Server
+On the EC2 terminal:
+
+bash
+Copy
+Edit
+sudo apt update
+sudo apt install apache2 -y
+Check it’s working:
+
+bash
+Copy
+Edit
+curl localhost
+Or visit:
+👉 http://<EC2-PUBLIC-IP> in browser
+You should see the Apache default page.
+
+🔵 STEP 4: Upload Your index.html to EC2
+From your local terminal (outside EC2):
+
+bash
+Copy
+Edit
+scp -i "your-key.pem" /path/to/index.html ubuntu@<EC2-PUBLIC-IP>:/tmp
+🔁 Replace:
+
+/path/to/index.html → location of your file
+
+<EC2-PUBLIC-IP> → your instance IP
+
+🔵 STEP 5: Move index.html to Apache Web Root
+Back in the EC2 SSH terminal:
+
+bash
+Copy
+Edit
+sudo mv /tmp/index.html /var/www/html/index.html
+(Overwrite if prompted)
+
+🔵 STEP 6: Restart Apache
+bash
+Copy
+Edit
+sudo systemctl restart apache2
+🔵 STEP 7: View Your Website
+Open this in browser:
+
+cpp
+Copy
+Edit
+http://<EC2-PUBLIC-IP>
+🎉 You should now see your custom index.html page live!
+
+🌐 Program 7 — Part B: Hosting a Static Website on S3
+✅ STEP 1: Prepare Your Website Files
+You need:
+
+index.html (mandatory)
+
+Optional: CSS, JS, images, etc.
+
+Example: Create a basic index.html
+On your desktop:
+
+Open Notepad or VS Code
+
+Paste this:
+
+html
+Copy
+Edit
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My S3 Website</title>
+</head>
+<body>
+  <h1>Hello from AWS S3! 🌍</h1>
+</body>
+</html>
+Save the file as index.html
+
+✅ STEP 2: Create a New S3 Bucket
+Go to https://s3.console.aws.amazon.com/s3
+
+Click Create bucket
+
+Fill the form:
+Bucket name: e.g., nimra-s3-static-site (must be globally unique)
+
+Region: Keep as Asia Pacific (Mumbai) ap-south-1 or your preferred
+
+Uncheck: Block all public access ✅
+
+Scroll down → Click Create bucket
+
+✅ STEP 3: Upload Website Files
+Click on your bucket name
+
+Go to the Objects tab
+
+Click Upload
+
+Click Add files → Select index.html (and other folders if you have CSS/JS)
+
+Click Upload
+
+✅ STEP 4: Enable Static Website Hosting
+Go to the Properties tab of your bucket
+
+Scroll down to Static website hosting
+
+Click Edit
+
+Choose Enable
+
+Index document: index.html
+
+Error document (optional): error.html
+
+Click Save changes
+
+✅ You’ll now see the Website endpoint URL
+
+Example: http://nimra-s3-static-site.s3-website.ap-south-1.amazonaws.com
+
+But wait... it's still blocked! Now we allow public access 👇
+
+✅ STEP 5: Set Bucket Policy to Allow Public Access
+Go to the Permissions tab of the bucket
+
+Scroll to Bucket policy
+
+Click Edit
+
+Paste this policy (replace your-bucket-name with your actual bucket name):
+
+json
+Copy
+Edit
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadAccess",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::your-bucket-name/*"
+    }
+  ]
+}
+📌 Example for nimra-s3-static-site:
+
+json
+Copy
+Edit
+"Resource": "arn:aws:s3:::nimra-s3-static-site/*"
+Click Save changes
+
+✅ STEP 6: Open Your Website 🎉
+Go back to the Properties tab
+
+Scroll to Static website hosting
+
+Copy the Website endpoint URL
+
+Paste it in a new browser tab
+
+You should now see your static site live from S3!
