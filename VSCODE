@@ -1,0 +1,125 @@
+✅ PHASE 1: Launch & Prepare EC2 Instance
+Step 1: Launch EC2
+Go to AWS Console → Search EC2 → Open Instances.
+
+Click Launch Instance or choose an existing instance.
+
+Choose Ubuntu AMI (or Amazon Linux if preferred).
+
+Choose t2.micro for Free Tier.
+
+In Key Pair, select an existing key or create a new one:
+
+Download the .pem file when prompted. Save it securely.
+
+Step 2: Configure Network Access
+Under Security Group settings:
+
+Ensure Port 22 (SSH) is open to your IP.
+
+This is necessary to connect via SSH.
+
+In Inbound Rules:
+
+makefile
+Copy
+Edit
+Type: SSH
+Port: 22
+Source: My IP
+Launch the instance.
+
+After it's running, copy the Public IPv4 address.
+
+✅ PHASE 2: Set Up SSH Access on Ubuntu
+Step 3: Move .pem to .ssh Folder
+Open Ubuntu Terminal.
+
+Run:
+
+bash
+Copy
+Edit
+mkdir -p ~/.ssh
+mv ~/Downloads/your-key.pem ~/.ssh/
+Replace your-key.pem with the name of the .pem file you downloaded.
+
+Step 4: Set Secure Permissions
+SSH requires strict permissions on the private key:
+
+bash
+Copy
+Edit
+chmod 400 ~/.ssh/your-key.pem
+Step 5 (Optional but Recommended): Create SSH Config File
+Open or create the SSH config file:
+
+bash
+Copy
+Edit
+nano ~/.ssh/config
+Add this block:
+
+ini
+Copy
+Edit
+Host my-ec2
+  HostName <your-ec2-public-ip>
+  User ubuntu                     # For Ubuntu AMI
+  IdentityFile ~/.ssh/your-key.pem
+Replace <your-ec2-public-ip> with the actual public IPv4 address.
+
+Save and exit: Ctrl + O, then Enter, then Ctrl + X.
+
+✅ PHASE 3: Connect Using VS Code
+Step 6: Install Remote - SSH Extension in VS Code
+Open VS Code.
+
+Go to Extensions (Ctrl + Shift + X).
+
+Search for Remote - SSH and install it.
+
+Step 7: Connect to EC2 from VS Code
+Open Command Palette: Ctrl + Shift + P.
+
+Type and select:
+
+pgsql
+Copy
+Edit
+Remote-SSH: Connect to Host
+Select my-ec2 from the list (from your ~/.ssh/config).
+
+VS Code will:
+
+Open a new window.
+
+Automatically connect to your EC2 terminal.
+
+✅ You can now open folders, run code, install packages on EC2 from inside VS Code!
+
+✅ (Alternative) PHASE 4: Connect Without Config File
+If you don't want to use ~/.ssh/config, connect directly via terminal:
+
+bash
+Copy
+Edit
+ssh -i ~/.ssh/your-key.pem ubuntu@<your-ec2-public-ip>
+But you’ll need to do this every time. The config file avoids repetition.
+
+✅ PHASE 5: (Optional) Setup Git & Tools on EC2
+You can now install dev tools on EC2 for full-stack remote dev:
+
+bash
+Copy
+Edit
+sudo apt update
+sudo apt install git build-essential nodejs npm python3-pip -y
+✅ ✅ Summary of What You Need:
+Task	Detail
+EC2 Instance	Launched and running
+.pem file	Saved in ~/.ssh/ with permission 400
+VS Code Extension	Remote - SSH
+~/.ssh/config (optional)	Easy nickname-based connection
+Final Command (if needed)	ssh -i ~/.ssh/your-key.pem ubuntu@ip
+
