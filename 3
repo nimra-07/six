@@ -1,0 +1,146 @@
+✅ Application Load Balancer (ALB) Setup – Step-by-Step Guide
+🔹 STEP 1: Create VPC
+Go to VPC Dashboard → Create VPC
+
+Select VPC only
+
+Name: DemoVPC
+
+IPv4 CIDR block: 10.0.0.0/16
+
+Click Create VPC
+
+🔹 STEP 2: Create Internet Gateway
+Go to Internet Gateways → Create IGW
+
+Name: DemoIGW
+
+Click Create, then select it
+
+Actions → Attach to VPC → select DemoVPC
+
+🔹 STEP 3: Create 2 Subnets
+Go to Subnets → Create Subnet
+
+Select DemoVPC
+
+Add:
+
+Subnet1: CIDR 10.0.1.0/24, AZ ap-south-1a
+
+Subnet2: CIDR 10.0.2.0/24, AZ ap-south-1b
+
+Click Create
+
+🔹 STEP 4: Create Route Table & Associate
+Go to Route Tables → Create
+
+Name: DemoRT, VPC: DemoVPC
+
+Select the new RT → Edit Routes
+
+Add Route: 0.0.0.0/0 → DemoIGW
+
+Go to Subnet Associations
+
+Click Edit → Select both subnets → Save
+
+🔹 STEP 5: Create Security Groups (3)
+ALB-SG (for Load Balancer):
+
+Inbound: HTTP (80) from 0.0.0.0/0
+
+EC2-SG (for EC2 Instances):
+
+Inbound: HTTP (80) from ALB-SG
+
+SSH-SG (Optional for SSH):
+
+Inbound: SSH (22) from your IP
+
+🔹 STEP 6: Launch 2 EC2 Instances
+Repeat this twice, once for each subnet:
+
+Go to EC2 → Launch Instance
+
+Name: Server1 and Server2
+
+AMI: Ubuntu
+
+Instance type: t2.micro
+
+Network:
+
+VPC: DemoVPC
+
+Subnet: Subnet1 or Subnet2
+
+Enable Auto-assign Public IP
+
+Security Group: Attach EC2-SG (and SSH-SG if needed)
+
+In Advanced Details → User data, paste:
+
+bash
+Copy
+Edit
+#!/bin/bash
+sudo apt update -y
+sudo apt install -y apache2
+sudo systemctl start apache2
+sudo systemctl enable apache2
+echo "<h1>Server Details</h1><p><strong>Hostname:</strong> $(hostname)</p><p><strong>IP Address:</strong> $(hostname -I | cut -d' ' -f1)</p>" > /var/www/html/index.html
+sudo systemctl restart apache2
+Click Launch
+
+🔹 STEP 7: Create Target Group
+Go to EC2 → Target Groups → Create Target Group
+
+Type: Instance
+
+Name: DemoTG
+
+Protocol: HTTP, Port: 80
+
+VPC: DemoVPC
+
+Register both EC2 instances
+
+Click Create
+
+🔹 STEP 8: Create Application Load Balancer (ALB)
+Go to Load Balancers → Create Load Balancer
+
+Type: Application Load Balancer
+
+Name: DemoALB
+
+Scheme: Internet-facing
+
+IP type: IPv4
+
+VPC: DemoVPC
+
+Select both public subnets
+
+Assign ALB-SG
+
+Listener: HTTP → Forward to DemoTG
+
+Click Create
+
+🔹 STEP 9: Test the Setup
+Wait for ALB status = active
+
+Go to Load Balancers → Select ALB
+
+Copy DNS name
+
+Open in browser:
+
+cpp
+Copy
+Edit
+http://<ALB-DNS>
+Refresh the page — it will toggle between two EC2s (different hostname/IP)
+
