@@ -1,0 +1,181 @@
+✅ Program 8: Run Java App Connected to AWS RDS on Ubuntu (Your Local Machine)
+✅ PHASE 1: Install Java on Ubuntu
+bash
+Copy
+Edit
+sudo apt update
+sudo apt install openjdk-17-jdk
+Verify installation:
+
+bash
+Copy
+Edit
+java -version
+javac -version
+✅ PHASE 2: Download and Set Up MySQL Connector/J
+bash
+Copy
+Edit
+wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-j-8.0.33.tar.gz
+tar -zxvf mysql-connector-j-8.0.33.tar.gz
+This will create a folder:
+
+Copy
+Edit
+mysql-connector-j-8.0.33/
+Inside it, the key file you’ll use is:
+
+bash
+Copy
+Edit
+mysql-connector-j-8.0.33/mysql-connector-java-8.0.33.jar
+✅ PHASE 3: Create Java Program
+Create a new Java file:
+
+bash
+Copy
+Edit
+nano JdbcCrudDemo.java
+Paste the following code, but replace the DB URL, user, and password with your actual RDS info:
+
+java
+Copy
+Edit
+import java.sql.*;
+
+public class JdbcCrudDemo {
+    static final String JDBC_URL = "jdbc:mysql://<RDS-ENDPOINT>:3306/your_database";
+    static final String JDBC_USER = "admin";
+    static final String JDBC_PASS = "yourpassword";
+
+    public static void main(String[] args) {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASS);
+
+            // CREATE
+            String insertSql = "INSERT INTO employees (name, email, country, salary) VALUES (?, ?, ?, ?)";
+            PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+            insertStmt.setString(1, "Alice");
+            insertStmt.setString(2, "alice@example.com");
+            insertStmt.setString(3, "USA");
+            insertStmt.setDouble(4, 50000);
+            insertStmt.executeUpdate();
+            System.out.println("Inserted new employee.");
+
+            // READ
+            String selectSql = "SELECT * FROM employees";
+            Statement selectStmt = conn.createStatement();
+            ResultSet rs = selectStmt.executeQuery(selectSql);
+            System.out.println("Employee List:");
+            while (rs.next()) {
+                System.out.println(
+                    rs.getInt("id") + ", " +
+                    rs.getString("name") + ", " +
+                    rs.getString("email") + ", " +
+                    rs.getString("country") + ", " +
+                    rs.getDouble("salary")
+                );
+            }
+
+            // UPDATE
+            String updateSql = "UPDATE employees SET salary = ? WHERE name = ?";
+            PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+            updateStmt.setDouble(1, 60000);
+            updateStmt.setString(2, "Alice");
+            updateStmt.executeUpdate();
+            System.out.println("Updated salary for Alice.");
+
+            // DELETE
+            String deleteSql = "DELETE FROM employees WHERE name = ?";
+            PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
+            deleteStmt.setString(1, "Alice");
+            deleteStmt.executeUpdate();
+            System.out.println("Deleted employee Alice.");
+
+            // Clean up
+            deleteStmt.close();
+            updateStmt.close();
+            rs.close();
+            selectStmt.close();
+            insertStmt.close();
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+Save and exit: Press Ctrl + O, Enter, then Ctrl + X
+
+✅ PHASE 4: Create the Table in AWS RDS
+Connect using MySQL client (install if not available):
+
+bash
+Copy
+Edit
+sudo apt install mysql-client
+Connect to your RDS instance:
+
+bash
+Copy
+Edit
+mysql -h <RDS-ENDPOINT> -u admin -p
+Run the following SQL:
+
+sql
+Copy
+Edit
+CREATE DATABASE your_database;
+USE your_database;
+
+CREATE TABLE employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100),
+    country VARCHAR(100),
+    salary DOUBLE
+);
+✅ PHASE 5: Compile and Run Java Program
+Compile
+
+bash
+Copy
+Edit
+javac -cp .:mysql-connector-j-8.0.33/mysql-connector-java-8.0.33.jar JdbcCrudDemo.java
+Run
+
+bash
+Copy
+Edit
+java -cp .:mysql-connector-j-8.0.33/mysql-connector-java-8.0.33.jar JdbcCrudDemo
+✅ You should see:
+
+Inserted new employee
+
+Printed all employees
+
+Updated Alice’s salary
+
+Deleted Alice
+
+🔒 NOTES ABOUT RDS ACCESS
+Ensure:
+
+RDS is publicly accessible
+
+RDS security group has Inbound rule for port 3306 open for your Ubuntu IP
+
+You can find your IP here: https://whatismyipaddress.com
+
+Example CIDR: X.X.X.X/32
+
+✅ Summary Checklist
+Step	Status
+Java installed on Ubuntu	✅
+MySQL Connector/J downloaded	✅
+Java program created and updated	✅
+RDS created and publicly accessible	✅
+Table employees created in DB	✅
+Java compiled with .jar in classpath	✅
+Java program executed successfully	✅
+
