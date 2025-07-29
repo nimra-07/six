@@ -1,0 +1,141 @@
+✅ PHASE 1: Install AWS CLI (only once per machine)
+If already installed → skip to Phase 2.
+
+bash
+Copy
+Edit
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+To verify installation:
+
+bash
+Copy
+Edit
+aws --version
+✅ PHASE 2: Configure AWS CLI
+Go to AWS Console → Search IAM → Users
+
+Select your username → Security Credentials
+
+Under Access keys, click “Create access key”
+
+Select Command Line Interface (CLI) → Create
+→ Copy the Access Key ID and Secret Access Key
+
+In terminal:
+
+bash
+Copy
+Edit
+aws configure
+Then fill:
+
+pgsql
+Copy
+Edit
+AWS Access Key ID: <paste from AWS>
+AWS Secret Access Key: <paste from AWS>
+Default region: ap-south-1
+Default output format: text
+✅ PHASE 3: Create and Manage S3 Bucket
+🔹 Create Unique Bucket
+bash
+Copy
+Edit
+aws s3 mb s3://your-unique-bucket-name --region ap-south-1
+Example:
+
+bash
+Copy
+Edit
+aws s3 mb s3://nimra-cloudlab-2907 --region ap-south-1
+🔹 Upload File to Bucket
+bash
+Copy
+Edit
+aws s3 cp <local-filename> s3://your-unique-bucket-name/
+Example:
+
+bash
+Copy
+Edit
+aws s3 cp index.html s3://nimra-cloudlab-2907/
+✅ PHASE 4: Create CloudFront Distribution
+Go to AWS Console → Search CloudFront → Click Create Distribution
+
+Origin domain: Choose the S3 bucket you just created
+
+Origin access: Choose “Origin access control (OAC)”
+
+Create new OAC → Give it a name → Save
+
+Leave default settings → Click Create Distribution
+
+✅ PHASE 5: Fix Bucket Policy (to allow CloudFront access)
+Go to S3 → Select your bucket → Go to Permissions
+
+Click Bucket Policy → Paste this:
+
+json
+Copy
+Edit
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowCloudFrontAccessOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "cloudfront.amazonaws.com"
+      },
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::nimra-cloudlab-2907/*",
+      "Condition": {
+        "StringEquals": {
+          "AWS:SourceArn": "arn:aws:cloudfront::<your-account-id>:distribution/<distribution-id>"
+        }
+      }
+    }
+  ]
+}
+Replace:
+
+"arn:aws:s3:::nimra-cloudlab-2907/*" → your bucket name
+
+"arn:aws:cloudfront::...:distribution/..." → your CloudFront distribution ARN (from CloudFront details page)
+
+✅ Save.
+
+✅ PHASE 6: Access Your File Publicly
+Once the distribution is Deployed:
+
+Copy the CloudFront domain URL (e.g., d123abc9.cloudfront.net)
+
+Open in browser:
+
+bash
+Copy
+Edit
+https://d123abc9.cloudfront.net/index.html
+✔️ Your uploaded file will now be visible publicly!
+
+✨ Optional CLI Commands Summary
+List Buckets
+
+bash
+Copy
+Edit
+aws s3 ls
+List files inside a bucket
+
+bash
+Copy
+Edit
+aws s3 ls s3://<bucket-name>
+Copy between buckets
+
+bash
+Copy
+Edit
+aws s3 cp s3://source-bucket/file s3://dest-bucket/file
